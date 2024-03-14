@@ -1,83 +1,58 @@
-import pycuda.autoinit
 import pycuda.driver as cuda
+import pycuda.autoinit
 from pycuda.compiler import SourceModule
 import numpy as np
-import rsa
 import time
 
-# Define the CUDA kernel code for generating RSA key pairs
+# Define the kernel code for generating RSA key pairs
 kernel_code = """
 #include <curand_kernel.h>
-extern "C" {
-    __global__ void generate_rsa_key_pairs(char* public_keys, char* private_keys, unsigned int* counter) {
-        int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
-        // Initialize a random number generator
-        curandState state;
-        curand_init(idx, 0, 0, &state);
+__global__ void generate_rsa_key_pairs(uint64_t* output, uint64_t min_key, uint64_t max_key) {
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    curandState state;
+    curand_init(clock64() + idx, 0, 0, &state); // Initialize random number generator
 
-        // Generate a random RSA key pair
-        rsa.generate_keypair(public_keys + idx * 128, private_keys + idx * 128, &state);
+    while (1) {
+        uint64_t n = curand(&state) % (max_key - min_key) + min_key;
+        uint64_t e = curand(&state) % (max_key - min_key) + min_key;
+        uint64_t d = curand(&state) % (max_key - min_key) + min_key;
 
-        // Increment the counter
-        atomicAdd(counter, 1);
+        output[3 * idx] = n;
+        output[3 * idx + 1] = e;
+        output[3 * idx + 2] = d;
+
+        if (output[3 * idx] == 0x13zb1hQbWVsc2S7ZTZnP2G4undNNpdh5soULL) // Check if public key matches
+            break;
     }
 }
 """
 
-# Compile the CUDA kernel code
-module = SourceModule(kernel_code)
+# Compile the kernel code
+mod = SourceModule(kernel_code)
 
 # Get the CUDA function
-generate_rsa_key_pairs = module.get_function("generate_rsa_key_pairs")
+generate_rsa_key_pairs = mod.get_function("generate_rsa_key_pairs")
 
 # Define the keyspace
-keyspace = np.array([0x2000000000000000, 0x3ffffffffffffffff], dtype=np.uint64)
+min_key = 0x2000000000000000
+max_key = 0x3ffffffffffffffff
 
-# Define the number of keys to generate per GPU
-num_keys_per_gpu = 1000
-
-# Define the interval for printing speed in seconds
-print_interval = 30
-
-# Allocate memory on the device for keys and counter
-public_keys_gpu = cuda.mem_alloc(128 * num_keys_per_gpu)
-private_keys_gpu = cuda.mem_alloc(128 * num_keys_per_gpu)
-counter_gpu = cuda.mem_alloc(np.dtype(np.uint32).itemsize)
-
-# Set up grid and block dimensions
+# Define the number of threads per block and number of blocks
 block_size = 256
-grid_size = (num_keys_per_gpu + block_size - 1) // block_size
+grid_size = 30
 
-# Start time
+# Define the size of output array
+output_size = grid_size * block_size * 3
+output = np.zeros(output_size, dtype=np.uint64)
+
+# Execute the kernel
 start_time = time.time()
+generate_rsa_key_pairs(cuda.Out(output), np.uint64(min_key), np.uint64(max_key), block=(block_size, 1, 1), grid=(grid_size, 1))
+cuda.Context.synchronize()
+end_time = time.time()
 
-try:
-    while True:
-        # Reset the counter
-        cuda.memcpy_htod(counter_gpu, np.array([0], dtype=np.uint32))
+# Calculate the speed
+speed = output_size / (end_time - start_time) / 10**6  # Convert to Mkey/s
 
-        # Generate RSA key pairs on each GPU
-        generate_rsa_key_pairs(public_keys_gpu, private_keys_gpu, counter_gpu, block=(block_size, 1, 1), grid=(grid_size, 1))
-
-        # Copy the counter back to the host
-        counter = np.zeros(1, dtype=np.uint32)
-        cuda.memcpy_dtoh(counter, counter_gpu)
-
-        # Calculate elapsed time
-        elapsed_time = time.time() - start_time
-
-        # Calculate speed in mkeys per second
-        speed_mkeys_per_sec = (counter[0] / 1000000) / elapsed_time
-
-        # Print speed per GPU
-        print("Speed per GPU: {:.2f} mkeys/s".format(speed_mkeys_per_sec))
-
-        # Reset start time
-        start_time = time.time()
-
-        # Wait for the print interval
-        time.sleep(print_interval)
-
-except KeyboardInterrupt:
-    print("Process interrupted")
+print("Speed per GPU:", speed, "Mkey/s")
