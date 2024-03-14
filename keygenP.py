@@ -33,7 +33,7 @@ def is_prime(n):
 # Generate prime number of given bit length
 def generate_prime(bit_length):
     while True:
-        n = np.random.randint(2**(bit_length-1), 2**bit_length)
+        n = np.random.randint(0, 2**bit_length)
         n |= 1  # Make sure it's odd
         if is_prime(n):
             return n
@@ -73,7 +73,7 @@ def main():
 
     start_time = time.time()
     attempts = 0
-    bit_length = 64  # Adjust this value as needed
+    bit_length = 32  # Adjust this value as needed
     while True:
         attempts += 1
         public_key, private_key = generate_keypair(bit_length)
