@@ -3,15 +3,23 @@ import time
 import hashlib
 
 def generate_keypair():
+    print("Generating key pair...")
     # Generate random primes within the given range
     p = cp.random.randint(20000000, 30000000)
     q = cp.random.randint(20000000, 30000000)
 
     # Ensure p and q are distinct primes
+    print("Finding prime p...")
     while not is_prime(p):
+        print("p is not prime:", p)
         p = cp.random.randint(20000000, 30000000)
+    print("Found prime p:", p)
+
+    print("Finding prime q...")
     while not is_prime(q) or q == p:
+        print("q is not prime or equal to p:", q)
         q = cp.random.randint(20000000, 30000000)
+    print("Found prime q:", q)
 
     # Calculate n and phi(n)
     n = p * q
@@ -66,6 +74,7 @@ def main():
     attempts = 0
     while True:
         attempts += 1
+        print(f"\nAttempt {attempts}:")
         public_key, _ = generate_keypair()
         hashed_public_key = hash_public_key(public_key)
         if hashed_public_key == target_hash:
