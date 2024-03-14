@@ -42,9 +42,7 @@ def main():
     target_public_key = "13zb1hQbWVsc2S7ZTZnP2G4undNNpdh5so"
     target_hash = hashlib.sha256(target_public_key.encode()).hexdigest()
 
-    print("Generating prime numbers...")
     primes = generate_primes(10**6)
-    print("Prime numbers generated.")
 
     start_time = time.time()
     attempts = 0
@@ -57,11 +55,6 @@ def main():
             print("Public Key:", public_key)
             print("Attempts:", attempts)
             break
-
-        if attempts % 100000 == 0:
-            elapsed_time = time.time() - start_time
-            speed = (attempts / elapsed_time) / 1e6
-            print(f"Speed: {speed:.2f} mkey/s", end="\r", flush=True)
 
 if __name__ == "__main__":
     main()
