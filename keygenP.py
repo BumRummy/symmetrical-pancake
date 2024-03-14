@@ -2,59 +2,32 @@ import cupy as cp
 import time
 import hashlib
 
-def generate_keypair():
-    print("Generating key pair...")
-    # Generate random primes within an extended range
-    p = cp.random.randint(100000000, 200000000)
-    q = cp.random.randint(100000000, 200000000)
+def generate_primes():
+    n = 200000000
+    sieve = cp.ones(n, dtype=bool)
+    sieve[:2] = False
+    for i in range(2, int(n ** 0.5) + 1):
+        if sieve[i]:
+            sieve[i*i:n:i] = False
+    primes = cp.where(sieve)[0]
+    return primes
 
-    # Ensure p and q are distinct primes
-    print("Finding prime p...")
-    while not is_prime(p):
-        print("p is not prime:", p)
-        p = cp.random.randint(100000000, 200000000)
-    print("Found prime p:", p)
+def generate_keypair(primes):
+    p = cp.random.choice(primes)
+    q = cp.random.choice(primes)
+    while q == p:
+        q = cp.random.choice(primes)
 
-    print("Finding prime q...")
-    while not is_prime(q) or q == p:
-        print("q is not prime or equal to p:", q)
-        q = cp.random.randint(100000000, 200000000)
-    print("Found prime q:", q)
-
-    # Calculate n and phi(n)
     n = p * q
     phi = (p - 1) * (q - 1)
 
-    # Choose e such that e is coprime with phi(n)
-    print("Finding public exponent e...")
     e = cp.random.randint(2, phi - 1)
-    while gcd(e, phi) != 1:
+    while cp.gcd(e, phi) != 1:
         e = cp.random.randint(2, phi - 1)
-    print("Found public exponent e:", e)
 
-    # Compute the modular multiplicative inverse of e mod phi(n)
     d = mod_inverse(e, phi)
 
     return ((e, n), (d, n))
-
-def is_prime(num):
-    if num <= 1:
-        return False
-    if num <= 3:
-        return True
-    if num % 2 == 0 or num % 3 == 0:
-        return False
-    i = 5
-    while i * i <= num:
-        if num % i == 0 or num % (i + 2) == 0:
-            return False
-        i += 6
-    return True
-
-def gcd(a, b):
-    while b:
-        a, b = b, a % b
-    return a
 
 def mod_inverse(a, m):
     m0, x0, x1 = m, 0, 1
@@ -71,13 +44,17 @@ def main():
     target_public_key = "13zb1hQbWVsc2S7ZTZnP2G4undNNpdh5so"
     target_hash = hashlib.sha256(target_public_key.encode()).hexdigest()
 
+    print("Generating prime numbers...")
+    primes = generate_primes()
+    print("Prime numbers generated.")
+
     start_time = time.time()
     last_print_time = start_time
     attempts = 0
     while True:
         attempts += 1
         print(f"\nAttempt {attempts}:")
-        public_key, _ = generate_keypair()
+        public_key, _ = generate_keypair(primes)
         hashed_public_key = hash_public_key(public_key)
         if hashed_public_key == target_hash:
             print("\nRSA Key Pair Found:")
