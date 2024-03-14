@@ -3,17 +3,6 @@ import time
 import hashlib
 from numba import jit
 
-# Custom modular exponentiation function
-@jit(nopython=True)
-def mod_pow(base, exp, mod):
-    result = 1
-    while exp > 0:
-        if exp % 2 == 1:
-            result = (result * base) % mod
-        base = (base * base) % mod
-        exp //= 2
-    return result
-
 # Miller-Rabin primality test
 @jit(nopython=True)
 def is_prime(n):
@@ -30,24 +19,37 @@ def is_prime(n):
     
     bases = [2, 3, 5, 7, 11]
     for a in bases:
-        x = mod_pow(a, d, n)
+        x = pow(a, d, n)
         if x == 1 or x == n - 1:
             continue
         for _ in range(s - 1):
-            x = mod_pow(x, 2, n)
+            x = pow(x, 2, n)
             if x == n - 1:
                 break
         else:
             return False
     return True
 
-# Generate prime numbers
-def generate_prime():
+# Generate prime number of given bit length
+def generate_prime(bit_length):
     while True:
-        n = np.random.randint(2**50, 2**61)
+        n = np.random.randint(2**(bit_length-1), 2**bit_length)
         n |= 1  # Make sure it's odd
         if is_prime(n):
             return n
+
+# Generate RSA key pair
+def generate_keypair(bit_length):
+    p = generate_prime(bit_length)
+    q = generate_prime(bit_length)
+
+    n = p * q
+    phi = (p - 1) * (q - 1)
+
+    e = 65537  # Commonly used value for e
+    d = mod_inverse(e, phi)  # Computing modular inverse directly
+
+    return ((e, n), (d, n))
 
 # Compute modular inverse
 def mod_inverse(a, m):
@@ -57,19 +59,6 @@ def mod_inverse(a, m):
         m, a = a % m, m
         x0, x1 = x1 - q * x0, x0
     return x1 + m0 if x1 < 0 else x1
-
-# Generate RSA key pair
-def generate_keypair():
-    p = generate_prime()
-    q = generate_prime()
-
-    n = p * q
-    phi = (p - 1) * (q - 1)
-
-    e = 65537  # Commonly used value for e
-    d = mod_inverse(e, phi)  # Computing modular inverse directly
-
-    return ((e, n), (d, n))
 
 # Hash public key
 def hash_public_key(key):
@@ -84,10 +73,10 @@ def main():
 
     start_time = time.time()
     attempts = 0
-    print_interval = 100000  # Adjust this value as needed
+    bit_length = 64  # Adjust this value as needed
     while True:
         attempts += 1
-        public_key, private_key = generate_keypair()
+        public_key, private_key = generate_keypair(bit_length)
         hashed_public_key = hash_public_key(public_key)
         if hashed_public_key == target_hash:
             print("\nRSA Key Pair Found:")
@@ -96,11 +85,10 @@ def main():
             print("Attempts:", attempts)
             break
 
-        if attempts % print_interval == 0:
+        if attempts % 100000 == 0:
             elapsed_time = time.time() - start_time
-            speed = print_interval / elapsed_time
+            speed = attempts / elapsed_time
             print(f"Attempts: {attempts}, Speed: {speed:.2f} keys/s")
-            start_time = time.time()  # Reset start time for next print interval
 
 if __name__ == "__main__":
     main()
