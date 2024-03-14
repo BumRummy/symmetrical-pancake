@@ -1,41 +1,83 @@
-import numpy as np
-from numba import cuda
+import random
+import time
 import hashlib
 
-# CUDA kernel to generate RSA key pairs
-@cuda.jit
-def generate_rsa_key_pairs(output, min_key, max_key, target_public_key):
-    idx = cuda.grid(1)
-    while True:
-        n = idx + min_key
-        e = idx + min_key + 1
-        d = idx + min_key + 2
+def generate_keypair():
+    # Generate random primes within the given range
+    p = random.randint(20000000000000000, 0x3ffffffffffffffff)
+    q = random.randint(20000000000000000, 0x3ffffffffffffffff)
 
-        # Check if the generated public key matches the target
-        public_key = hashlib.sha256("{},{}".format(n, e).encode()).hexdigest()
-        if public_key == target_public_key:
-            output[0] = n
-            output[1] = e
-            output[2] = d
-            break
+    # Ensure p and q are distinct primes
+    while not is_prime(p):
+        p = random.randint(20000000000000000, 0x3ffffffffffffffff)
+    while not is_prime(q) or q == p:
+        q = random.randint(20000000000000000, 0x3ffffffffffffffff)
 
-# Define the keyspace range
-min_key = np.uint64(0x2000000000000000)  # 20000000000000000
-max_key = np.uint64(0x3fffffffffffffff)  # 3ffffffffffffffff
-target_public_key = "13zb1hQbWVsc2S7ZTZnP2G4undNNpdh5so"  # Target public key
+    # Calculate n and phi(n)
+    n = p * q
+    phi = (p - 1) * (q - 1)
 
-# Initialize output array to store the RSA key pairs
-output = np.zeros(3, dtype=np.uint64)
+    # Choose e such that e is coprime with phi(n)
+    e = random.randint(2, phi - 1)
+    while gcd(e, phi) != 1:
+        e = random.randint(2, phi - 1)
 
-# Set up CUDA grid and block dimensions
-block_dim = 256
-grid_dim = (max_key - min_key) // block_dim + 1
+    # Compute the modular multiplicative inverse of e mod phi(n)
+    d = mod_inverse(e, phi)
 
-# Launch the CUDA kernel
-generate_rsa_key_pairs[grid_dim, block_dim](output, min_key, max_key, target_public_key)
+    return ((e, n), (d, n))
 
-# Print the generated RSA key pairs
-print("Generated RSA key pairs:")
-print("N:", hex(output[0]))
-print("E:", hex(output[1]))
-print("D:", hex(output[2]))
+def is_prime(num):
+    if num <= 1:
+        return False
+    if num <= 3:
+        return True
+    if num % 2 == 0 or num % 3 == 0:
+        return False
+    i = 5
+    while i * i <= num:
+        if num % i == 0 or num % (i + 2) == 0:
+            return False
+        i += 6
+    return True
+
+def gcd(a, b):
+    while b:
+        a, b = b, a % b
+    return a
+
+def mod_inverse(a, m):
+    m0, x0, x1 = m, 0, 1
+    while a > 1:
+        q = a // m
+        m, a = a % m, m
+        x0, x1 = x1 - q * x0, x0
+    return x1 + m0 if x1 < 0 else x1
+
+def hash_public_key(key):
+    return hashlib.sha256(str(key).encode()).hexdigest()
+
+def main():
+    target_public_key = "13zb1hQbWVsc2S7ZTZnP2G4undNNpdh5so"
+
+    start_time = time.time()
+    found = False
+    attempts = 0
+    while not found:
+        attempts += 1
+        public_key, _ = generate_keypair()
+        hashed_public_key = hash_public_key(public_key)
+        if hashed_public_key == target_public_key:
+            found = True
+            print("RSA Key Pair Found:")
+            print("Public Key:", public_key)
+            print("Attempts:", attempts)
+        if attempts % 100000 == 0:
+            elapsed_time = time.time() - start_time
+            completion_percentage = (attempts / 0x3ffffffffffffffff) * 100
+            speed = attempts / elapsed_time
+            print(f"Approximation of completion: {completion_percentage:.2f}%")
+            print(f"Current speed: {speed:.2f} attempts per second")
+
+if __name__ == "__main__":
+    main()
