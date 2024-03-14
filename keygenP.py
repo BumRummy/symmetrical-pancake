@@ -5,14 +5,14 @@ import hashlib
 
 def generate_keypair():
     # Generate random primes within the given range
-    p = cp.random.randint(20000000000000000, 0x3ffffffffffffffff)
-    q = cp.random.randint(20000000000000000, 0x3ffffffffffffffff)
+    p = cp.random.randint(20000000, 30000000)
+    q = cp.random.randint(20000000, 30000000)
 
     # Ensure p and q are distinct primes
     while not is_prime(p):
-        p = cp.random.randint(20000000000000000, 0x3ffffffffffffffff)
+        p = cp.random.randint(20000000, 30000000)
     while not is_prime(q) or q == p:
-        q = cp.random.randint(20000000000000000, 0x3ffffffffffffffff)
+        q = cp.random.randint(20000000, 30000000)
 
     # Calculate n and phi(n)
     n = p * q
@@ -75,7 +75,7 @@ def main():
             break
         if attempts % 100000 == 0:
             elapsed_time = time.time() - start_time
-            completion_percentage = (attempts / 0x3ffffffffffffffff) * 100
+            completion_percentage = (attempts / 100000) * 100
             if time.time() - last_print_time >= 30:
                 speed = (attempts / elapsed_time) / 1e6
                 print(f"Speed: {speed:.2f} mkey/s")
@@ -83,4 +83,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
