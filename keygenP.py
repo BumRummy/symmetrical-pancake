@@ -43,5 +43,10 @@ def main():
             print("Attempts:", attempts)
             break
 
+        if attempts % 10 == 0:
+            elapsed_time = time.time() - start_time
+            speed = attempts / elapsed_time
+            print(f"Speed: {speed:.2f} hashes/s", end="\r", flush=True)
+
 if __name__ == "__main__":
     main()
