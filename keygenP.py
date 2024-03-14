@@ -1,26 +1,27 @@
+import cupy as cp
 import random
 import time
 import hashlib
 
 def generate_keypair():
     # Generate random primes within the given range
-    p = random.randint(20000000000000000, 0x3ffffffffffffffff)
-    q = random.randint(20000000000000000, 0x3ffffffffffffffff)
+    p = cp.random.randint(20000000000000000, 0x3ffffffffffffffff)
+    q = cp.random.randint(20000000000000000, 0x3ffffffffffffffff)
 
     # Ensure p and q are distinct primes
     while not is_prime(p):
-        p = random.randint(20000000000000000, 0x3ffffffffffffffff)
+        p = cp.random.randint(20000000000000000, 0x3ffffffffffffffff)
     while not is_prime(q) or q == p:
-        q = random.randint(20000000000000000, 0x3ffffffffffffffff)
+        q = cp.random.randint(20000000000000000, 0x3ffffffffffffffff)
 
     # Calculate n and phi(n)
     n = p * q
     phi = (p - 1) * (q - 1)
 
     # Choose e such that e is coprime with phi(n)
-    e = random.randint(2, phi - 1)
+    e = cp.random.randint(2, phi - 1)
     while gcd(e, phi) != 1:
-        e = random.randint(2, phi - 1)
+        e = cp.random.randint(2, phi - 1)
 
     # Compute the modular multiplicative inverse of e mod phi(n)
     d = mod_inverse(e, phi)
@@ -61,23 +62,25 @@ def main():
     target_public_key = "13zb1hQbWVsc2S7ZTZnP2G4undNNpdh5so"
 
     start_time = time.time()
-    found = False
+    last_print_time = start_time
     attempts = 0
-    while not found:
+    while True:
         attempts += 1
         public_key, _ = generate_keypair()
         hashed_public_key = hash_public_key(public_key)
         if hashed_public_key == target_public_key:
-            found = True
             print("RSA Key Pair Found:")
             print("Public Key:", public_key)
             print("Attempts:", attempts)
+            break
         if attempts % 100000 == 0:
             elapsed_time = time.time() - start_time
             completion_percentage = (attempts / 0x3ffffffffffffffff) * 100
-            speed = attempts / elapsed_time
-            print(f"Approximation of completion: {completion_percentage:.2f}%")
-            print(f"Current speed: {speed:.2f} attempts per second")
+            if time.time() - last_print_time >= 30:
+                speed = (attempts / elapsed_time) / 1e6
+                print(f"Speed: {speed:.2f} mkey/s")
+                last_print_time = time.time()
 
 if __name__ == "__main__":
     main()
+
