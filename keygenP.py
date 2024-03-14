@@ -1,5 +1,4 @@
 import cupy as cp
-import random
 import time
 import hashlib
 
