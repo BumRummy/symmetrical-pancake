@@ -2,6 +2,16 @@ import cupy as cp
 import time
 import hashlib
 
+def generate_primes():
+    n = 200000000
+    sieve = cp.ones(n, dtype=bool)
+    sieve[:2] = False
+    for i in range(2, int(n ** 0.5) + 1):
+        if sieve[i]:
+            sieve[i*i:n:i] = False
+    primes = cp.where(sieve)[0]
+    return primes
+
 def generate_keypair(primes):
     p_index = cp.random.randint(len(primes))
     q_index = cp.random.randint(len(primes))
@@ -10,23 +20,6 @@ def generate_keypair(primes):
 
     p = primes[p_index]
     q = primes[q_index]
-
-    n = p * q
-    phi = (p - 1) * (q - 1)
-
-    e = cp.random.randint(2, phi - 1)
-    while cp.gcd(e, phi) != 1:
-        e = cp.random.randint(2, phi - 1)
-
-    d = mod_inverse(e, phi)
-
-    return ((e, n), (d, n))
-
-def generate_keypair(primes):
-    p = cp.random.choice(primes)
-    q = cp.random.choice(primes)
-    while q == p:
-        q = cp.random.choice(primes)
 
     n = p * q
     phi = (p - 1) * (q - 1)
