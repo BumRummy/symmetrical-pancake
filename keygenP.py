@@ -99,8 +99,7 @@ def main():
         if attempts % print_interval == 0:
             elapsed_time = time.time() - start_time
             speed = print_interval / elapsed_time
-            speed_ascii = int(speed / 1000) * "*"
-            print(f"Attempts: {attempts}, Elapsed Time: {elapsed_time:.2f} seconds, Speed: {speed:.2f} keys/s {speed_ascii}")
+            print(f"Attempts: {attempts}, Speed: {speed:.2f} keys/s")
 
 if __name__ == "__main__":
     main()
