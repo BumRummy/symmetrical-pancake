@@ -4,21 +4,21 @@ import hashlib
 
 def generate_keypair():
     print("Generating key pair...")
-    # Generate random primes within the given range
-    p = cp.random.randint(20000000, 30000000)
-    q = cp.random.randint(20000000, 30000000)
+    # Generate random primes within an extended range
+    p = cp.random.randint(1000000000, 2000000000)
+    q = cp.random.randint(1000000000, 2000000000)
 
     # Ensure p and q are distinct primes
     print("Finding prime p...")
     while not is_prime(p):
         print("p is not prime:", p)
-        p = cp.random.randint(20000000, 30000000)
+        p = cp.random.randint(1000000000, 2000000000)
     print("Found prime p:", p)
 
     print("Finding prime q...")
     while not is_prime(q) or q == p:
         print("q is not prime or equal to p:", q)
-        q = cp.random.randint(20000000, 30000000)
+        q = cp.random.randint(1000000000, 2000000000)
     print("Found prime q:", q)
 
     # Calculate n and phi(n)
