@@ -56,5 +56,10 @@ def main():
             print("Attempts:", attempts)
             break
 
+        if attempts % 100000 == 0:
+            elapsed_time = time.time() - start_time
+            speed = (attempts / elapsed_time) / 1e6
+            print(f"\rSpeed: {speed:.2f} mkey/s", end="", flush=True)
+
 if __name__ == "__main__":
     main()
