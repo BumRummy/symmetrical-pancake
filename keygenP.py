@@ -1,7 +1,6 @@
 import cupy as cp
 import time
 import hashlib
-import math
 
 def is_prime(n, k=5):
     """Miller-Rabin primality test."""
@@ -34,9 +33,10 @@ def is_prime(n, k=5):
     return True
 
 def generate_prime():
-    n = cp.random.randint(2**15, 2**16)
+    n = cp.random.randint(2**31, 2**32, dtype=cp.uint32)
+    n |= 1  # Make sure it's odd
     while not is_prime(n):
-        n = cp.random.randint(2**15, 2**16)
+        n += 2
     return int(n)
 
 def generate_keypair():
