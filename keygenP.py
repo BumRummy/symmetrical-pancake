@@ -8,9 +8,6 @@ from Crypto.Util.number import bytes_to_long, long_to_bytes
 min_key = 20000000000000000
 max_key = 0x3ffffffffffffffff
 
-# Query the user for the keyspace size
-keyspace_size = query_keyspace()
-
 # Define the target public key in hex format
 target_public_key_hex = "13zb1hQbWVsc2S7ZTZnP2G4undNNpdh5so"
 
@@ -85,6 +82,3 @@ for i, hex_key in enumerate(hex_public_keys):
 with open("generated_public_keys.txt", "w") as f:
     for hex_key in hex_public_keys:
         f.write(f"{hex_key}\n")
-
-
-
