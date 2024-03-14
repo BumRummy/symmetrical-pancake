@@ -71,7 +71,7 @@ try:
         speed_mkeys_per_sec = (counter[0] / 1000000) / elapsed_time
 
         # Print speed per GPU
-        print(f"Speed per GPU: {speed_mkeys_per_sec:.2f} mkeys/s")
+        print("Speed per GPU: {:.2f} mkeys/s".format(speed_mkeys_per_sec))
 
         # Reset start time
         start_time = time.time()
