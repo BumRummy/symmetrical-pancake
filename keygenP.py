@@ -1,44 +1,71 @@
-import cupy as cp
+import pycuda.autoinit
+import pycuda.driver as cuda
+import numpy as np
 import time
 import hashlib
 
-def is_prime(n, k=5):
-    """Miller-Rabin primality test."""
-    if n <= 3:
-        return n == 2 or n == 3
-    if n % 2 == 0:
-        return False
+# CUDA kernel for Miller-Rabin primality test
+miller_rabin_kernel = """
+#include <curand_kernel.h>
+extern "C" {
+    __device__ bool is_prime(unsigned long long int n) {
+        if (n <= 3) return (n == 2 || n == 3);
+        if (n % 2 == 0) return false;
+        
+        unsigned long long int d = n - 1;
+        int s = 0;
+        while (d % 2 == 0) {
+            d >>= 1;
+            s++;
+        }
+        
+        unsigned long long int bases[5] = {2, 3, 5, 7, 11};
+        for (int i = 0; i < 5; i++) {
+            unsigned long long int a = bases[i];
+            unsigned long long int x = 1;
+            for (unsigned long long int exp = d; exp > 0; exp >>= 1) {
+                if (exp & 1) x = (x * a) % n;
+                a = (a * a) % n;
+            }
+            if (x == 1 || x == n - 1) continue;
+            for (int r = 1; r < s; r++) {
+                x = (x * x) % n;
+                if (x == 1) return false;
+                if (x == n - 1) break;
+            }
+            if (x != n - 1) return false;
+        }
+        return true;
+    }
+}
+"""
 
-    def check(a, s, d, n):
-        x = pow(a, d, n)
-        if x == 1:
-            return True
-        for i in range(s - 1):
-            if x == n - 1:
-                return True
-            x = pow(x, 2, n)
-        return x == n - 1
+# Compile CUDA kernel
+mod = cuda.SourceModule(miller_rabin_kernel)
 
-    s = 0
-    d = n - 1
-    while d % 2 == 0:
-        d //= 2
-        s += 1
+# Get CUDA function
+is_prime_cuda = mod.get_function("is_prime")
 
-    for _ in range(k):
-        a = cp.random.randint(2, n - 1)
-        if not check(a, s, d, n):
-            return False
-
-    return True
-
+# Generate prime numbers using CUDA
 def generate_prime():
-    n = cp.random.randint(2**31, 2**32, dtype=cp.uint32)
+    n = np.random.randint(2**50, 2**61)
     n |= 1  # Make sure it's odd
-    while not is_prime(n):
+    while not is_prime_cuda(np.uint64(n), block=(1,1,1), grid=(1,1,1))[0]:
         n += 2
-    return int(n)
+    return n
 
+# Compute modular inverse using CUDA
+def mod_inverse(a, m):
+    a = np.uint64(a)
+    m = np.uint64(m)
+    x0, x1 = np.uint64(0), np.uint64(1)
+    while a > 1:
+        q = a // m
+        m, a = a % m, m
+        x0, x1 = x1 - q * x0, x0
+    return (x1 + np.uint64(m)) if x1 < 0 else x1
+
+# Generate RSA key pair
 def generate_keypair():
     p = generate_prime()
     q = generate_prime()
@@ -47,13 +74,15 @@ def generate_keypair():
     phi = (p - 1) * (q - 1)
 
     e = 65537  # Commonly used value for e
-    d = pow(e, -1, phi)  # Computing modular inverse directly
+    d = mod_inverse(e, phi)  # Computing modular inverse using CUDA
 
     return ((e, n), (d, n))
 
+# Hash public key
 def hash_public_key(key):
     return hashlib.sha256(str(key).encode()).hexdigest()
 
+# Main function
 def main():
     target_public_key = "13zb1hQbWVsc2S7ZTZnP2G4undNNpdh5so"
     target_hash = hashlib.sha256(target_public_key.encode()).hexdigest()
@@ -72,11 +101,6 @@ def main():
             print("Private Key:", private_key)
             print("Attempts:", attempts)
             break
-
-        if attempts % 10 == 0:
-            elapsed_time = time.time() - start_time
-            speed = attempts / elapsed_time
-            print(f"Speed: {speed:.2f} hashes/s", end="\r", flush=True)
 
 if __name__ == "__main__":
     main()
