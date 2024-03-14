@@ -83,22 +83,33 @@ def main():
     print("Searching for the target public key...")
 
     start_time = time.time()
-    attempts = 0
+    start_attempts = 0
     print_interval = 100000  # Adjust this value as needed
     while True:
-        attempts += 1
-        public_key, private_key = generate_keypair()
-        hashed_public_key = hash_public_key(public_key)
+        attempts = start_attempts
+        start_time_interval = time.time()
+        while attempts < start_attempts + print_interval:
+            attempts += 1
+            public_key, private_key = generate_keypair()
+            hashed_public_key = hash_public_key(public_key)
+            if hashed_public_key == target_hash:
+                print("\nRSA Key Pair Found:")
+                print("Public Key:", public_key)
+                print("Private Key:", private_key)
+                print("Attempts:", attempts)
+                break
+        
+        elapsed_time_interval = time.time() - start_time_interval
+        if attempts >= start_attempts + print_interval:
+            elapsed_time = time.time() - start_time
+            speed = print_interval / elapsed_time_interval
+            speed_ascii = int(speed / 1000) * "*"
+            print(f"Attempts: {attempts}, Elapsed Time: {elapsed_time:.2f} seconds, Speed: {speed:.2f} keys/s {speed_ascii}")
+        
         if hashed_public_key == target_hash:
-            print("\nRSA Key Pair Found:")
-            print("Public Key:", public_key)
-            print("Private Key:", private_key)
-            print("Attempts:", attempts)
             break
 
-        if attempts % print_interval == 0:
-            elapsed_time = time.time() - start_time
-            print(f"Attempts: {attempts}, Elapsed Time: {elapsed_time:.2f} seconds")
+        start_attempts += print_interval
 
 if __name__ == "__main__":
     main()
