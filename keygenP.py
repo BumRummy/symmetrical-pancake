@@ -12,7 +12,7 @@ def generate_rsa_key_pairs(output, min_key, max_key, target_public_key):
         d = idx + min_key + 2
 
         # Check if the generated public key matches the target
-        public_key = hashlib.sha256(f"{n},{e}".encode()).hexdigest()
+        public_key = hashlib.sha256("{},{}".format(n, e).encode()).hexdigest()
         if public_key == target_public_key:
             output[0] = n
             output[1] = e
