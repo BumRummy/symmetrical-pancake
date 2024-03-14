@@ -2,32 +2,20 @@ import cupy as cp
 import time
 import hashlib
 
-def generate_primes():
-    n = 200000000
-    sieve = cp.ones(n, dtype=bool)
-    sieve[:2] = False
-    for i in range(2, int(n ** 0.5) + 1):
-        if sieve[i]:
-            sieve[i*i:n:i] = False
-    primes = cp.where(sieve)[0]
-    return primes
+def generate_prime():
+    n = cp.random.randint(2**15, 2**16)
+    while not cp.all(cp.isprime(n)):
+        n = cp.random.randint(2**15, 2**16)
+    return int(n)
 
-def generate_keypair(primes):
-    p_index = cp.random.randint(len(primes))
-    q_index = cp.random.randint(len(primes))
-    while q_index == p_index:
-        q_index = cp.random.randint(len(primes))
-
-    p = primes[p_index]
-    q = primes[q_index]
+def generate_keypair():
+    p = generate_prime()
+    q = generate_prime()
 
     n = p * q
     phi = (p - 1) * (q - 1)
 
-    e = cp.random.randint(2, phi - 1)
-    while cp.gcd(e, phi) != 1:
-        e = cp.random.randint(2, phi - 1)
-
+    e = 65537  # Commonly used value for e
     d = mod_inverse(e, phi)
 
     return ((e, n), (d, n))
@@ -47,30 +35,23 @@ def main():
     target_public_key = "13zb1hQbWVsc2S7ZTZnP2G4undNNpdh5so"
     target_hash = hashlib.sha256(target_public_key.encode()).hexdigest()
 
-    print("Generating prime numbers...")
-    primes = generate_primes()
-    print("Prime numbers generated.")
+    print("Searching for the target public key...")
 
     start_time = time.time()
-    last_print_time = start_time
     attempts = 0
     while True:
         attempts += 1
-        print(f"\nAttempt {attempts}:")
-        public_key, _ = generate_keypair(primes)
+        public_key, _ = generate_keypair()
         hashed_public_key = hash_public_key(public_key)
         if hashed_public_key == target_hash:
             print("\nRSA Key Pair Found:")
             print("Public Key:", public_key)
             print("Attempts:", attempts)
             break
+
         if attempts % 100000 == 0:
             elapsed_time = time.time() - start_time
-            completion_percentage = (attempts / 100000) * 100
             speed = (attempts / elapsed_time) / 1e6
-            print(f"Speed: {speed:.2f} mkey/s", end="\r", flush=True)
-        else:
-            speed = (attempts / (time.time() - start_time)) / 1e6
             print(f"Speed: {speed:.2f} mkey/s", end="\r", flush=True)
 
 if __name__ == "__main__":
