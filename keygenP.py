@@ -5,20 +5,20 @@ import hashlib
 def generate_keypair():
     print("Generating key pair...")
     # Generate random primes within an extended range
-    p = cp.random.randint(1000000000, 2000000000)
-    q = cp.random.randint(1000000000, 2000000000)
+    p = cp.random.randint(100000000, 200000000)
+    q = cp.random.randint(100000000, 200000000)
 
     # Ensure p and q are distinct primes
     print("Finding prime p...")
     while not is_prime(p):
         print("p is not prime:", p)
-        p = cp.random.randint(1000000000, 2000000000)
+        p = cp.random.randint(100000000, 200000000)
     print("Found prime p:", p)
 
     print("Finding prime q...")
     while not is_prime(q) or q == p:
         print("q is not prime or equal to p:", q)
-        q = cp.random.randint(1000000000, 2000000000)
+        q = cp.random.randint(100000000, 200000000)
     print("Found prime q:", q)
 
     # Calculate n and phi(n)
@@ -26,9 +26,11 @@ def generate_keypair():
     phi = (p - 1) * (q - 1)
 
     # Choose e such that e is coprime with phi(n)
+    print("Finding public exponent e...")
     e = cp.random.randint(2, phi - 1)
     while gcd(e, phi) != 1:
         e = cp.random.randint(2, phi - 1)
+    print("Found public exponent e:", e)
 
     # Compute the modular multiplicative inverse of e mod phi(n)
     d = mod_inverse(e, phi)
