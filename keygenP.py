@@ -77,4 +77,28 @@ def hash_public_key(key):
 
 # Main function
 def main():
-    target_public
+    target_public_key = "13zb1hQbWVsc2S7ZTZnP2G4undNNpdh5so"
+    target_hash = hashlib.sha256(target_public_key.encode()).hexdigest()
+
+    print("Searching for the target public key...")
+
+    start_time = time.time()
+    attempts = 0
+    print_interval = 100000  # Adjust this value as needed
+    while True:
+        attempts += 1
+        public_key, private_key = generate_keypair()
+        hashed_public_key = hash_public_key(public_key)
+        if hashed_public_key == target_hash:
+            print("\nRSA Key Pair Found:")
+            print("Public Key:", public_key)
+            print("Private Key:", private_key)
+            print("Attempts:", attempts)
+            break
+
+        if attempts % print_interval == 0:
+            elapsed_time = time.time() - start_time
+            print(f"Attempts: {attempts}, Elapsed Time: {elapsed_time:.2f} seconds")
+
+if __name__ == "__main__":
+    main()
