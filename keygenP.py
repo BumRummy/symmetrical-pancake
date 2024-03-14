@@ -1,13 +1,12 @@
-import pycuda.driver as cuda
-import pycuda.autoinit
-from pycuda.compiler import SourceModule
 import numpy as np
-import time
+from numba import cuda
 
-# Define the kernel code for generating RSA key pairs
-kernel_code = """
+# Define the CUDA kernel code
+cuda_kernel_code = """
 #include <curand_kernel.h>
+#include <stdint.h>
 
+extern "C" {
 __global__ void generate_rsa_key_pairs(uint64_t* output, uint64_t min_key, uint64_t max_key) {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
     curandState state;
@@ -26,33 +25,32 @@ __global__ void generate_rsa_key_pairs(uint64_t* output, uint64_t min_key, uint6
             break;
     }
 }
+}
 """
 
-# Compile the kernel code
-mod = SourceModule(kernel_code)
+# Compile the CUDA kernel code
+cuda_kernel = cuda.jit('void(uint64[:], uint64, uint64)', device=True)(cuda_kernel_code)
 
-# Get the CUDA function
-generate_rsa_key_pairs = mod.get_function("generate_rsa_key_pairs")
+# Define the parameters for key space
+min_key = np.uint64(20000000000000000)
+max_key = np.uint64(0x3ffffffffffffffff)
 
-# Define the keyspace
-min_key = 0x2000000000000000
-max_key = 0x3ffffffffffffffff
+# Allocate memory on the host for the output
+output = np.zeros((1, 3), dtype=np.uint64)
 
-# Define the number of threads per block and number of blocks
-block_size = 256
-grid_size = 30
+# Allocate memory on the device for the output
+d_output = cuda.to_device(output)
 
-# Define the size of output array
-output_size = grid_size * block_size * 3
-output = np.zeros(output_size, dtype=np.uint64)
+# Launch the CUDA kernel
+threads_per_block = 256
+blocks_per_grid = 1
+cuda_kernel[blocks_per_grid, threads_per_block](d_output, min_key, max_key)
 
-# Execute the kernel
-start_time = time.time()
-generate_rsa_key_pairs(cuda.Out(output), np.uint64(min_key), np.uint64(max_key), block=(block_size, 1, 1), grid=(grid_size, 1))
-cuda.Context.synchronize()
-end_time = time.time()
+# Copy the result back from the device to the host
+output = d_output.copy_to_host()
 
-# Calculate the speed
-speed = output_size / (end_time - start_time) / 10**6  # Convert to Mkey/s
-
-print("Speed per GPU:", speed, "Mkey/s")
+# Print the generated RSA key pairs
+print("Generated RSA key pairs:")
+print("N:", hex(output[0][0]))
+print("E:", hex(output[0][1]))
+print("D:", hex(output[0][2]))
