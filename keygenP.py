@@ -3,9 +3,39 @@ import time
 import hashlib
 import math
 
+def is_prime(n, k=5):
+    """Miller-Rabin primality test."""
+    if n <= 3:
+        return n == 2 or n == 3
+    if n % 2 == 0:
+        return False
+
+    def check(a, s, d, n):
+        x = pow(a, d, n)
+        if x == 1:
+            return True
+        for i in range(s - 1):
+            if x == n - 1:
+                return True
+            x = pow(x, 2, n)
+        return x == n - 1
+
+    s = 0
+    d = n - 1
+    while d % 2 == 0:
+        d //= 2
+        s += 1
+
+    for _ in range(k):
+        a = cp.random.randint(2, n - 1)
+        if not check(a, s, d, n):
+            return False
+
+    return True
+
 def generate_prime():
     n = cp.random.randint(2**15, 2**16)
-    while not cp.all(cp.isprime(n)):
+    while not is_prime(n):
         n = cp.random.randint(2**15, 2**16)
     return int(n)
 
