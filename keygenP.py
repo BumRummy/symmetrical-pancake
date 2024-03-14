@@ -75,10 +75,8 @@ def main():
         if attempts % 100000 == 0:
             elapsed_time = time.time() - start_time
             completion_percentage = (attempts / 100000) * 100
-            if time.time() - last_print_time >= 30:
-                speed = (attempts / elapsed_time) / 1e6
-                print(f"Speed: {speed:.2f} mkey/s")
-                last_print_time = time.time()
+            speed = (attempts / elapsed_time) / 1e6
+            print(f"Speed: {speed:.2f} mkey/s", end="\r")
 
 if __name__ == "__main__":
     main()
