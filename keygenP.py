@@ -100,6 +100,7 @@ def main():
             elapsed_time = time.time() - start_time
             speed = print_interval / elapsed_time
             print(f"Attempts: {attempts}, Speed: {speed:.2f} keys/s")
+            start_time = time.time()  # Reset start time for next print interval
 
 if __name__ == "__main__":
     main()
