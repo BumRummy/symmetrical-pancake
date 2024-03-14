@@ -59,28 +59,18 @@ def hash_public_key(key):
 
 def main():
     target_public_key = "13zb1hQbWVsc2S7ZTZnP2G4undNNpdh5so"
+    target_hash = hashlib.sha256(target_public_key.encode()).hexdigest()
 
     start_time = time.time()
     last_print_time = start_time
     attempts = 0
     while True:
         attempts += 1
-        public_key, private_key = generate_keypair()
+        public_key, _ = generate_keypair()
         hashed_public_key = hash_public_key(public_key)
-        if hashed_public_key == target_public_key:
+        if hashed_public_key == target_hash:
             print("\nRSA Key Pair Found:")
             print("Public Key:", public_key)
-            print("Private Key:", private_key)
             print("Attempts:", attempts)
             break
-        if attempts % 100000 == 0:
-            elapsed_time = time.time() - start_time
-            completion_percentage = (attempts / 100000) * 100
-            speed = (attempts / elapsed_time) / 1e6
-            print(f"Speed: {speed:.2f} mkey/s", end="\r", flush=True)
-        else:
-            speed = (attempts / (time.time() - start_time)) / 1e6
-            print(f"Speed: {speed:.2f} mkey/s", end="\r", flush=True)
-
-if __name__ == "__main__":
-    main()
+        if attempts
