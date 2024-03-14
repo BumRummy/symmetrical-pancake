@@ -3,45 +3,43 @@ import pycuda.driver as cuda
 import numpy as np
 import time
 import hashlib
+from pycuda.compiler import SourceModule
 
 # CUDA kernel for Miller-Rabin primality test
 miller_rabin_kernel = """
-#include <curand_kernel.h>
-extern "C" {
-    __device__ bool is_prime(unsigned long long int n) {
-        if (n <= 3) return (n == 2 || n == 3);
-        if (n % 2 == 0) return false;
-        
-        unsigned long long int d = n - 1;
-        int s = 0;
-        while (d % 2 == 0) {
-            d >>= 1;
-            s++;
-        }
-        
-        unsigned long long int bases[5] = {2, 3, 5, 7, 11};
-        for (int i = 0; i < 5; i++) {
-            unsigned long long int a = bases[i];
-            unsigned long long int x = 1;
-            for (unsigned long long int exp = d; exp > 0; exp >>= 1) {
-                if (exp & 1) x = (x * a) % n;
-                a = (a * a) % n;
-            }
-            if (x == 1 || x == n - 1) continue;
-            for (int r = 1; r < s; r++) {
-                x = (x * x) % n;
-                if (x == 1) return false;
-                if (x == n - 1) break;
-            }
-            if (x != n - 1) return false;
-        }
-        return true;
+__device__ bool is_prime(unsigned long long int n) {
+    if (n <= 3) return (n == 2 || n == 3);
+    if (n % 2 == 0) return false;
+    
+    unsigned long long int d = n - 1;
+    int s = 0;
+    while (d % 2 == 0) {
+        d >>= 1;
+        s++;
     }
+    
+    unsigned long long int bases[5] = {2, 3, 5, 7, 11};
+    for (int i = 0; i < 5; i++) {
+        unsigned long long int a = bases[i];
+        unsigned long long int x = 1;
+        for (unsigned long long int exp = d; exp > 0; exp >>= 1) {
+            if (exp & 1) x = (x * a) % n;
+            a = (a * a) % n;
+        }
+        if (x == 1 || x == n - 1) continue;
+        for (int r = 1; r < s; r++) {
+            x = (x * x) % n;
+            if (x == 1) return false;
+            if (x == n - 1) break;
+        }
+        if (x != n - 1) return false;
+    }
+    return true;
 }
 """
 
 # Compile CUDA kernel
-mod = cuda.SourceModule(miller_rabin_kernel)
+mod = SourceModule(miller_rabin_kernel)
 
 # Get CUDA function
 is_prime_cuda = mod.get_function("is_prime")
