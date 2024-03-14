@@ -13,10 +13,10 @@ def generate_primes(n):
     return primes
 
 def generate_keypair(primes):
-    p = cp.random.choice(primes)
-    q = cp.random.choice(primes)
+    p = cp.random.choice(primes, size=(1,))
+    q = cp.random.choice(primes, size=(1,))
     while q == p:
-        q = cp.random.choice(primes)
+        q = cp.random.choice(primes, size=(1,))
 
     n = p * q
     phi = (p - 1) * (q - 1)
