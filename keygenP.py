@@ -43,11 +43,11 @@ def is_prime(n):
 
 # Generate prime numbers
 def generate_prime():
-    n = np.random.randint(2**50, 2**61)
-    n |= 1  # Make sure it's odd
-    while not is_prime(n):
-        n += 2
-    return n
+    while True:
+        n = np.random.randint(2**50, 2**61)
+        n |= 1  # Make sure it's odd
+        if is_prime(n):
+            return n
 
 # Compute modular inverse
 def mod_inverse(a, m):
