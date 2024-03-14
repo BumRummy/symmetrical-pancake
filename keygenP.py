@@ -3,6 +3,17 @@ import time
 import hashlib
 from numba import jit
 
+# Custom modular exponentiation function
+@jit(nopython=True)
+def mod_pow(base, exp, mod):
+    result = 1
+    while exp > 0:
+        if exp % 2 == 1:
+            result = (result * base) % mod
+        base = (base * base) % mod
+        exp //= 2
+    return result
+
 # Miller-Rabin primality test
 @jit(nopython=True)
 def is_prime(n):
@@ -19,11 +30,11 @@ def is_prime(n):
     
     bases = [2, 3, 5, 7, 11]
     for a in bases:
-        x = pow(a, d, n)
+        x = mod_pow(a, d, n)
         if x == 1 or x == n - 1:
             continue
         for _ in range(s - 1):
-            x = pow(x, 2, n)
+            x = mod_pow(x, 2, n)
             if x == n - 1:
                 break
         else:
@@ -66,23 +77,4 @@ def hash_public_key(key):
 
 # Main function
 def main():
-    target_public_key = "13zb1hQbWVsc2S7ZTZnP2G4undNNpdh5so"
-    target_hash = hashlib.sha256(target_public_key.encode()).hexdigest()
-
-    print("Searching for the target public key...")
-
-    start_time = time.time()
-    attempts = 0
-    while True:
-        attempts += 1
-        public_key, private_key = generate_keypair()
-        hashed_public_key = hash_public_key(public_key)
-        if hashed_public_key == target_hash:
-            print("\nRSA Key Pair Found:")
-            print("Public Key:", public_key)
-            print("Private Key:", private_key)
-            print("Attempts:", attempts)
-            break
-
-if __name__ == "__main__":
-    main()
+    target_public
