@@ -1,11 +1,19 @@
 import numpy as np
 import time
 import hashlib
-from numba import jit
+
+# Custom modular exponentiation function
+def mod_exp(base, exponent, modulus):
+    result = 1
+    while exponent > 0:
+        if exponent % 2 == 1:
+            result = (result * base) % modulus
+        exponent //= 2
+        base = (base * base) % modulus
+    return result
 
 # Miller-Rabin primality test
-@jit(nopython=True)
-def is_prime(n):
+def is_prime(n, num_trials=5):
     if n <= 3:
         return n == 2 or n == 3
     if n % 2 == 0:
@@ -18,12 +26,12 @@ def is_prime(n):
         s += 1
     
     bases = [2, 3, 5, 7, 11]
-    for a in bases:
-        x = pow(a, d, n)
+    for a in bases[:num_trials]:
+        x = mod_exp(a, d, n)
         if x == 1 or x == n - 1:
             continue
         for _ in range(s - 1):
-            x = pow(x, 2, n)
+            x = mod_exp(x, 2, n)
             if x == n - 1:
                 break
         else:
