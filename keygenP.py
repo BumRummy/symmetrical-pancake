@@ -68,7 +68,7 @@ def main():
         public_key, _ = generate_keypair()
         hashed_public_key = hash_public_key(public_key)
         if hashed_public_key == target_public_key:
-            print("RSA Key Pair Found:")
+            print("\nRSA Key Pair Found:")
             print("Public Key:", public_key)
             print("Attempts:", attempts)
             break
@@ -76,7 +76,7 @@ def main():
             elapsed_time = time.time() - start_time
             completion_percentage = (attempts / 100000) * 100
             speed = (attempts / elapsed_time) / 1e6
-            print(f"Speed: {speed:.2f} mkey/s", end="\r")
+            print(f"Speed: {speed:.2f} mkey/s", end="\r", flush=True)
 
 if __name__ == "__main__":
     main()
